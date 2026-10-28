@@ -38,6 +38,12 @@ _stext:
 _start:
 	/* Set sp */
 	leaq	stack, %rsp
+
+	/* 16 byte aligned */
+	andq $-16, %rsp
+
+	subq $8, %rsp
+
 	/* KIP pointer in eax - L4/KA */
 	pushq	%rax
 	/* Initialize Syscalls */

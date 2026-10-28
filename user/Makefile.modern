@@ -1,0 +1,174 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Standalone freestanding GNU Make build for the original L4 v4 userland.
+# amd64 target: kickstart is a 32-bit Multiboot loader; sigma0 and pingpong
+# are native 64-bit ELFs. C and C++ source languages are not changed.
+.DEFAULT_GOAL := all
+ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
+USER := $(ROOT)/user
+OUT ?= $(ROOT)/build/user-amd64
+OUT := $(abspath $(OUT))
+CXX ?= g++
+ifeq ($(origin CC),default)
+CC := gcc
+endif
+ifeq ($(origin LD),default)
+LD := ld
+endif
+AR ?= ar
+NM ?= nm
+OBJCOPY ?= objcopy
+
+KICKSTART_BASE ?= 0x00100000
+SIGMA0_BASE ?= 0x00f00000
+ROOTTASK_BASE ?= 0x01000000
+COMPORT ?= 0
+COMSPEED ?= 115200
+
+CXXFLAGS ?= -O2 -g
+# gcc-14 defaults to PIE on some Linux distributions. An L4 boot image
+# must have fixed load addresses. No hosted libc or libstdc++ used.
+FREESTANDING := -ffreestanding -fno-pic -fno-pie -fno-stack-protector \
+ -fno-builtin -fno-exceptions -fno-rtti -fno-threadsafe-statics \
+ -fno-asynchronous-unwind-tables -fno-unwind-tables -Wall -Wno-unused-parameter
+SYS_INCLUDE := $(shell $(CXX) -print-file-name=include)
+INCLUDES := -nostdinc -I$(OUT)/include -I$(USER)/include \
+ -I$(USER)/lib/io -I$(SYS_INCLUDE)
+FLAGS32 := -m32 -march=i686 $(FREESTANDING) -std=c++11 $(CXXFLAGS)
+FLAGS64 := -m64 -mno-red-zone $(FREESTANDING) -std=c++11 $(CXXFLAGS)
+
+LIBL4_SRCS := debug.cc amd64.cc
+LIBIO_SRCS := get_hex.cc print.cc amd64.cc
+SIGMA0_SRCS := crt0-amd64.S sigma0_io.cc sigma0.cc sigma0_mem.cc region.cc
+PINGPONG_SRCS := crt0-amd64.S pingpong.cc pingpong-amd64-32.cc
+L4TEST_SRCS := main.cc assert.cc menu.cc threads.cc string.cc \
+ ipc.cc ipc-string.cc ipc-pf.cc ipc-smp.cc kip.cc mem.cc sig0.cc exreg.cc \
+ tcontrol.cc schedule.cc amd64/crt0.S amd64/help.cc amd64/tests.cc
+KICKSTART_SRCS := crt0-amd64.S kickstart.cc kipmgr.cc elf.cc lib.cc bootinfo.cc \
+ amd64.cc mbi.cc mbi-amd64.cc mbi-loader.cc
+
+l4objs := $(addprefix $(OUT)/obj/l4/,$(addsuffix .o,$(basename $(LIBL4_SRCS))))
+ioobjs := $(addprefix $(OUT)/obj/io64/,$(addsuffix .o,$(basename $(LIBIO_SRCS))))
+io32objs := $(addprefix $(OUT)/obj/io32/,$(addsuffix .o,$(basename $(LIBIO_SRCS))))
+sigmaobjs := $(addprefix $(OUT)/obj/sigma0/,$(addsuffix .o,$(basename $(SIGMA0_SRCS))))
+testobjs := $(addprefix $(OUT)/obj/l4test/,$(addsuffix .o,$(basename $(L4TEST_SRCS))))
+rootobjs := $(addprefix $(OUT)/obj/pingpong/,$(addsuffix .o,$(basename $(PINGPONG_SRCS))))
+kickobjs := $(addprefix $(OUT)/obj/kickstart/,$(addsuffix .o,$(basename $(KICKSTART_SRCS))))
+kickextra := $(OUT)/obj/kickstart/elf64.o $(OUT)/obj/kickstart/bootinfo64.o
+
+LIBL4 := $(OUT)/lib/libl4.a
+LIBIO := $(OUT)/lib/libio.a
+LIBIO32 := $(OUT)/lib/libio32.a
+KICKSTART := $(OUT)/util/kickstart/kickstart
+SIGMA0 := $(OUT)/serv/sigma0/sigma0
+ROOTTASK := $(OUT)/apps/bench/pingpong/pingpong
+L4TEST := $(OUT)/apps/l4test/l4test
+
+.PHONY: all clean help check-tools bootfiles l4test
+all: $(KICKSTART) $(SIGMA0) $(ROOTTASK)
+l4test: $(L4TEST)
+help:
+	@echo 'make -f user/Makefile.modern -j4   # build kickstart, sigma0, pingpong'
+	@echo 'make -f user/Makefile.modern l4test  # optional API test root task'
+	@echo 'make -f user/Makefile.modern bootfiles'
+	@echo 'make -f user/Makefile.modern clean'
+check-tools:
+	@$(CXX) --version | head -1
+	@$(LD) --version | head -1
+bootfiles: all
+	@for f in '$(KICKSTART)' '$(SIGMA0)' '$(ROOTTASK)'; do file "$$f"; done
+clean:
+	@rm -rf '$(OUT)'
+
+$(OUT)/include/config.h: $(USER)/Makefile.modern
+	@mkdir -p $(@D)
+	@{ printf '%s\n' '/* Generated L4 userland build settings. */' \
+	    '#ifndef L4_USER_MODERN_CONFIG_H' '#define L4_USER_MODERN_CONFIG_H' \
+	    '#define CONFIG_COMPORT $(COMPORT)' '#define CONFIG_COMSPEED $(COMSPEED)' \
+	    '#endif'; } > $@.tmp
+	@mv $@.tmp $@
+
+# GCC's architecture autodetection selects L4 ia32 for the 32-bit loader
+# and L4 amd64 for native 64-bit user tasks. This MUST NOT be overridden.
+$(OUT)/obj/l4/%.o: $(USER)/lib/l4/%.cc $(OUT)/include/config.h
+	@mkdir -p $(@D)
+	$(CXX) $(INCLUDES) $(FLAGS64) -MMD -MP -c $< -o $@
+$(OUT)/obj/io64/%.o: $(USER)/lib/io/%.cc $(OUT)/include/config.h
+	@mkdir -p $(@D)
+	$(CXX) $(INCLUDES) $(FLAGS64) -MMD -MP -c $< -o $@
+$(OUT)/obj/io32/%.o: $(USER)/lib/io/%.cc $(OUT)/include/config.h
+	@mkdir -p $(@D)
+	$(CXX) $(INCLUDES) $(FLAGS32) -MMD -MP -c $< -o $@
+$(OUT)/obj/sigma0/%.o: $(USER)/serv/sigma0/%.cc $(OUT)/include/config.h
+	@mkdir -p $(@D)
+	$(CXX) $(INCLUDES) $(FLAGS64) -MMD -MP -c $< -o $@
+$(OUT)/obj/sigma0/%.o: $(USER)/serv/sigma0/%.S $(OUT)/include/config.h
+	@mkdir -p $(@D)
+	$(CC) $(INCLUDES) -m64 -fno-pie -DASSEMBLY -MMD -MP -c $< -o $@
+# Compatibility thread: generated 32-bit instructions stored in a 64-bit ELF.
+$(OUT)/obj/pingpong/pingpong-amd64-32.o: $(USER)/apps/bench/pingpong/pingpong-amd64-32.cc $(OUT)/include/config.h
+	@mkdir -p $(@D)
+	$(CXX) $(INCLUDES) $(FLAGS32) -MMD -MP -MF $(@:.o=.d) -c $< -o $@.elf32
+	$(OBJCOPY) -g -O elf64-x86-64 $@.elf32 $@
+	@rm -f $@.elf32
+
+$(OUT)/obj/pingpong/%.o: $(USER)/apps/bench/pingpong/%.cc $(OUT)/include/config.h
+	@mkdir -p $(@D)
+	$(CXX) $(INCLUDES) $(FLAGS64) -MMD -MP -c $< -o $@
+$(OUT)/obj/pingpong/%.o: $(USER)/apps/bench/pingpong/%.S $(OUT)/include/config.h
+	@mkdir -p $(@D)
+	$(CC) $(INCLUDES) -m64 -fno-pie -DASSEMBLY -MMD -MP -c $< -o $@
+$(OUT)/obj/l4test/%.o: $(USER)/apps/l4test/%.cc $(OUT)/include/config.h
+	@mkdir -p $(@D)
+	$(CXX) $(INCLUDES) -I$(USER)/apps/l4test/amd64 $(FLAGS64) -MMD -MP -c $< -o $@
+$(OUT)/obj/l4test/%.o: $(USER)/apps/l4test/%.S $(OUT)/include/config.h
+	@mkdir -p $(@D)
+	$(CC) $(INCLUDES) -I$(USER)/apps/l4test/amd64 -m64 -fno-pie -MMD -MP -c $< -o $@
+$(L4TEST): $(testobjs) $(LIBL4) $(LIBIO)
+	@mkdir -p $(@D)
+	$(LD) -m elf_x86_64 -static -z max-page-size=4096 -e _start \
+	 -Ttext $(ROOTTASK_BASE) -o $@ $(testobjs) $(LIBL4) $(LIBIO)
+
+$(OUT)/obj/kickstart/%.o: $(USER)/util/kickstart/%.cc $(OUT)/include/config.h
+	@mkdir -p $(@D)
+	$(CXX) $(INCLUDES) $(FLAGS32) -DALSO_ELF64 -DALSO_BOOTINFO64 \
+	 -DREVISION=0 -MMD -MP -c $< -o $@
+$(OUT)/obj/kickstart/%.o: $(USER)/util/kickstart/%.S $(OUT)/include/config.h
+	@mkdir -p $(@D)
+	$(CC) $(INCLUDES) -m32 -fno-pie -DASSEMBLY -MMD -MP -c $< -o $@
+$(OUT)/obj/kickstart/elf64.o: $(USER)/util/kickstart/elf.cc $(OUT)/include/config.h
+	@mkdir -p $(@D)
+	$(CXX) $(INCLUDES) $(FLAGS32) -DELF_64on32 -DREVISION=0 -MMD -MP -c $< -o $@
+$(OUT)/obj/kickstart/bootinfo64.o: $(USER)/util/kickstart/bootinfo.cc $(OUT)/include/config.h
+	@mkdir -p $(@D)
+	$(CXX) $(INCLUDES) $(FLAGS32) -DBOOTINFO_64on32 -DREVISION=0 -MMD -MP -c $< -o $@
+
+$(LIBL4): $(l4objs)
+	@mkdir -p $(@D)
+	$(AR) rcs $@ $^
+$(LIBIO): $(ioobjs)
+	@mkdir -p $(@D)
+	$(AR) rcs $@ $^
+$(LIBIO32): $(io32objs)
+	@mkdir -p $(@D)
+	$(AR) rcs $@ $^
+
+$(SIGMA0): $(sigmaobjs) $(LIBL4) $(LIBIO)
+	@mkdir -p $(@D)
+	$(LD) -m elf_x86_64 -static -z max-page-size=4096 -e _start \
+	 -Ttext $(SIGMA0_BASE) -o $@ $(sigmaobjs) $(LIBL4) $(LIBIO)
+$(ROOTTASK): $(rootobjs) $(LIBL4) $(LIBIO)
+	@mkdir -p $(@D)
+	$(LD) -m elf_x86_64 -static -z max-page-size=4096 -e _start \
+	 -Ttext $(ROOTTASK_BASE) -o $@ $(rootobjs) $(LIBL4) $(LIBIO)
+$(KICKSTART): $(kickobjs) $(kickextra) $(LIBIO32) $(USER)/util/kickstart/kickstart.ld
+	@mkdir -p $(@D)
+	$(LD) -m elf_i386 -static -N -Ttext $(KICKSTART_BASE) \
+	 -T $(USER)/util/kickstart/kickstart.ld -e _start -o $@ \
+	 $(kickobjs) $(kickextra) $(LIBIO32)
+
+DEPS := $(l4objs:.o=.d) $(ioobjs:.o=.d) $(io32objs:.o=.d) \
+ $(sigmaobjs:.o=.d) $(rootobjs:.o=.d) $(testobjs:.o=.d) $(kickobjs:.o=.d) $(kickextra:.o=.d)
+ifneq ($(filter clean help check-tools,$(MAKECMDGOALS)),)
+else
+-include $(DEPS)
+endif

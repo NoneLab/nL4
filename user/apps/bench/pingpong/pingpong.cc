@@ -47,6 +47,12 @@ extern long _start_pong_thread;
 #define START_ADDR(func)	((L4_Word_t) func)
 #endif
 
+#if defined(L4_ARCH_AMD64)
+#define THREAD_START_STACK_OFFSET 40
+#else
+#define THREAD_START_STACK_OFFSET 32
+#endif
+
 
 #define IPC_ARCH_OPTIMIZATION
 
@@ -349,10 +355,10 @@ void pager (void)
 		// Startup notification, start ping and pong thread
 		send_startup_ipc (ping_tid, L4_Get (&msg, 0),
 				  (L4_Word_t) ping_stack +
-				  sizeof (ping_stack) - 32);
+				  sizeof (ping_stack) - THREAD_START_STACK_OFFSET);
 		send_startup_ipc (pong_tid, L4_Get (&msg, 1),
 				  (L4_Word_t) pong_stack +
-				  sizeof (pong_stack) - 32);
+				  sizeof (pong_stack) - THREAD_START_STACK_OFFSET);
 		break;
 	    }
 
@@ -444,7 +450,7 @@ int main (void)
     L4_ThreadControl (pager_tid, L4_Myself (), scheduler_tid[0], L4_Myself (), (void*)pager_utcb);
     
 
-    L4_Start (pager_tid, (L4_Word_t) pager_stack + sizeof(pager_stack) - 32,
+    L4_Start (pager_tid, (L4_Word_t) pager_stack + sizeof(pager_stack) - THREAD_START_STACK_OFFSET,
 	      START_ADDR (pager));
 
     if (hsched)

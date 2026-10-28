@@ -185,6 +185,7 @@ extern __L4_SystemClock_t __L4_SystemClock;
 L4_INLINE  L4_Clock_t L4_SystemClock (void)
 {
     L4_Clock_t ret;
+    ret.raw = 0; /* Input RAX is otherwise uninitialized at the asm boundary. */
     
     __asm__ __volatile__ (
 	"/* L4_SystemClock */			\n"

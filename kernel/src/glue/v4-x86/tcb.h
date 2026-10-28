@@ -46,7 +46,7 @@ INLINE void tcb_t::init_stack()
 INLINE void tcb_t::set_space(space_t * space)
 {
     this->space = space;
-    this->pdir_cache = space ? (word_t)space->get_top_pdir_phys(get_cpu()) : NULL;
+    this->pdir_cache = space ? (word_t)space->get_top_pdir_phys(get_cpu()) : 0;
 
 }
 

@@ -41,20 +41,15 @@ get_hex(void)
 
   while ((t = c = getc()) != '\r')
   {
-      switch(c)
-      {
-      case '0' ... '9':
-	  c -= '0';
-	  break;
-	  
-      case 'a' ... 'f':
-	  c -= 'a' - 'A';
-      case 'A' ... 'F':
-	  c = c - 'A' + 10;
-	  break;
-      default:
-	  continue;
-      };
+      /* ISO C++ replaces the GNU case-range extension (case '0' ... '9'). */
+      if (c >= '0' && c <= '9')
+          c = c - '0';
+      else if (c >= 'a' && c <= 'f')
+          c = c - 'a' + 10;
+      else if (c >= 'A' && c <= 'F')
+          c = c - 'A' + 10;
+      else
+          continue;
       val <<= 4;
       val += c;
       

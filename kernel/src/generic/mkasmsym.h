@@ -37,23 +37,23 @@
 #define DS	__attribute__ ((section (".data")))
 
 #define MKASMSYM(sym, value)						\
-struct sym ##_sign_t { char x[32*((value) < 0 ? 1 : 2)]; };		\
+struct sym ##_sign_t { char x[1 + 32*((value) < 0 ? 1 : 2)]; };		\
 struct sym ##_sign_t sym ##_sign DS;					\
-struct sym ##_b0_t { char x[32*((__ABSVALUE(value) >> 0) & 0xff)]; };	\
+struct sym ##_b0_t { char x[1 + 32*((__ABSVALUE(value) >> 0) & 0xff)]; };	\
 struct sym ##_b0_t sym ##_b0 DS;					\
-struct sym ##_b1_t { char x[32*((__ABSVALUE(value) >> 8) & 0xff)]; };	\
+struct sym ##_b1_t { char x[1 + 32*((__ABSVALUE(value) >> 8) & 0xff)]; };	\
 struct sym ##_b1_t sym ##_b1 DS;					\
-struct sym ##_b2_t { char x[32*((__ABSVALUE(value) >> 16) & 0xff)]; };	\
+struct sym ##_b2_t { char x[1 + 32*((__ABSVALUE(value) >> 16) & 0xff)]; };	\
 struct sym ##_b2_t sym ##_b2 DS;					\
-struct sym ##_b3_t { char x[32*((__ABSVALUE(value) >> 24) & 0xff)]; };	\
+struct sym ##_b3_t { char x[1 + 32*((__ABSVALUE(value) >> 24) & 0xff)]; };	\
 struct sym ##_b3_t sym ##_b3 DS;					\
-struct sym ##_b4_t { char x[32*((__ABSVALUE(value) >> 32) & 0xff)]; };	\
+struct sym ##_b4_t { char x[1 + 32*((__ABSVALUE(value) >> 32) & 0xff)]; };	\
 struct sym ##_b4_t sym ##_b4 DS;					\
-struct sym ##_b5_t { char x[32*((__ABSVALUE(value) >> 40) & 0xff)]; };	\
+struct sym ##_b5_t { char x[1 + 32*((__ABSVALUE(value) >> 40) & 0xff)]; };	\
 struct sym ##_b5_t sym ##_b5 DS;					\
-struct sym ##_b6_t { char x[32*((__ABSVALUE(value) >> 48) & 0xff)]; };	\
+struct sym ##_b6_t { char x[1 + 32*((__ABSVALUE(value) >> 48) & 0xff)]; };	\
 struct sym ##_b6_t sym ##_b6 DS;					\
-struct sym ##_b7_t { char x[32*((__ABSVALUE(value) >> 56) & 0xff)]; };	\
+struct sym ##_b7_t { char x[1 + 32*((__ABSVALUE(value) >> 56) & 0xff)]; };	\
 struct sym ##_b7_t sym ##_b7 DS
 
 #endif /* !__MKASMSYM_H__ */

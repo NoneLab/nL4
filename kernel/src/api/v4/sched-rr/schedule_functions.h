@@ -406,15 +406,17 @@ INLINE word_t scheduler_t::return_schedule_parameter(word_t num, schedule_req_t 
     if (num == 0)
     { 
         thread_state_t state = req.tcb->get_state();
-        return (state == thread_state_t::aborted	? 1 : 
-                state.is_halted()			? 2 :
-                state.is_running()			? 3 :
-                state.is_polling()			? 4 :
-                state.is_sending()			? 5 :
-                state.is_waiting()			? 6 :
-                state.is_receiving()                    ? 7 : 
-                state.is_xcpu_waiting()                 ? 6 :
-                ({ WARNING("invalid state  tcb %t (%x)\n", req.tcb, (word_t)state); 0;}));
+        if (state == thread_state_t::aborted) return 1;
+        if (state.is_halted()) return 2;
+        if (state.is_running()) return 3;
+        if (state.is_polling()) return 4;
+        if (state.is_sending()) return 5;
+        if (state.is_waiting()) return 6;
+        if (state.is_receiving()) return 7;
+        if (state.is_xcpu_waiting()) return 6;
+
+        WARNING("invalid state  tcb %t (%x)\n", req.tcb, (word_t)state);
+        return 0;
     }
     else 
     {

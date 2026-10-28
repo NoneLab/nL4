@@ -1,0 +1,46 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 20, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "x64",
+      "displayName": "Pistachio x86-64 + Kickstart + userland",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/cmake/x64",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "PISTACHIO_PROFILE": "x86-x64-p4-nokdb"
+      }
+    },
+    {
+      "name": "x64-kdb",
+      "displayName": "Pistachio x86-64 + kernel debugger",
+      "inherits": "x64",
+      "binaryDir": "${sourceDir}/build/cmake/x64-kdb",
+      "cacheVariables": { "PISTACHIO_PROFILE": "x86-x64-p4-debug" }
+    },
+    {
+      "name": "x32",
+      "displayName": "Pistachio x86-32 kernel only",
+      "inherits": "x64",
+      "binaryDir": "${sourceDir}/build/cmake/x32",
+      "cacheVariables": { "PISTACHIO_PROFILE": "x86-x32-p4-nokdb" }
+    },
+    {
+      "name": "x64-l4test",
+      "displayName": "Pistachio x86-64 + l4test as Root Task",
+      "inherits": "x64",
+      "binaryDir": "${sourceDir}/build/cmake/x64-l4test",
+      "cacheVariables": { "PISTACHIO_ROOT_TASK": "l4test" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "x64", "configurePreset": "x64" },
+    { "name": "x64-kdb", "configurePreset": "x64-kdb" },
+    { "name": "x32", "configurePreset": "x32" },
+    { "name": "x64-l4test", "configurePreset": "x64-l4test" }
+  ],
+  "testPresets": [
+    { "name": "x64", "configurePreset": "x64", "output": { "outputOnFailure": true } }
+  ]
+}

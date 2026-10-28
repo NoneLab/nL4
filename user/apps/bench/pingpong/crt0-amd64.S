@@ -36,6 +36,9 @@ _stext:
 _start:
 	/* Set sp */
 	leaq	__stack, %rsp
+
+	andq $-16, %rsp
+
 	/* Push mbi values */
 	pushq	%rbx	/* mbi ptr	*/
 	pushq	%rax	/* mb magic	*/

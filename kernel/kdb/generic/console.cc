@@ -41,7 +41,7 @@ word_t kdb_current_console;
 void init_console (void)
 {
 
-    kdb_current_console = min(kdb_num_consoles, (word_t) CONFIG_KDB_BOOT_CONS);
+    /* The old configuration value was immediately overwritten below. */
     kdb_current_console = 0;
 
     if (kdb_consoles[kdb_current_console].init)

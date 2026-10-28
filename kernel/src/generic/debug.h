@@ -102,7 +102,7 @@ do {                                                                            
 
 # define TRACEF(f, x...)					\
 do {								\
-    printf ("%s:%d: " f, __FUNCTION__, __LINE__ ,##x);		\
+    printf ("%s:%d: " f, __func__, __LINE__ ,##x);		\
 } while(false)
 # define TRACE(x...)	printf(x)
 

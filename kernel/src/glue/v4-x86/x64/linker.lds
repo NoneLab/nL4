@@ -167,7 +167,10 @@ SECTIONS
 	    *(.kdebug-bss);
 	    *(.comment);	
 	}
-	. = ALIGN(4K);
+	/* Keep .sets beyond .kdebug even in KDB builds. Modern GNU ld may
+	   otherwise reset '.' after non-ALLOC/orphan sections; using the end
+	   of .data would overlap .kdebug when it contains debugger data. */
+	. = ALIGN(ADDR(.kdebug) + SIZEOF(.kdebug), 4K);
 #include <generic/linkersets.ldi> 
 	. = ALIGN(4K);
 	_end_text = .;
@@ -207,6 +210,10 @@ SECTIONS
 
 	/DISCARD/ :
 	{
+	    /* The x86-64 image is loaded by Kickstart, not Multiboot directly.
+	       An unhandled non-ALLOC .mb_header orphan makes modern GNU ld
+	       reset the location counter before .sets, moving .init to 1GiB! */
+	    *(.mb_header);
 	    *(.eh_frame);
 	    *(.note);
 	    *(.comment);

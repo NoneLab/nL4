@@ -97,7 +97,7 @@
  * They are inlined only. Carefull: if the maximum inlining 
  * limit is reached gcc 3.x does not inline even if explicitly 
  * specified. Use -finline-limit=<large number> here. */
-#define INLINE extern inline
+#define INLINE __attribute__((always_inline)) inline
 
 /* Functions for critical path optimizations */
 #if (__GNUC__ >= 3)
@@ -112,16 +112,14 @@
 
 
 /* Convenience functions for memory sizes. */
-#define KB(x)	((typeof (x)) ((word_t) x * 1024))
-#define MB(x)	((typeof (x)) ((word_t) x * 1024*1024))
-#define GB(x)	((typeof (x)) ((word_t) x * 1024*1024*1024))
+#define KB(x)	((word_t)(x) * (word_t)1024)
+#define MB(x)	((word_t)(x) * (word_t)1048576)
+#define GB(x)	((word_t)(x) * (word_t)1073741824)
 
-/* Offset for struct fields. */
-#if (__GNUC__ >= 4)
-#define offsetof(type, member)  __builtin_offsetof(type, member)
-#else
-#define offsetof(type, field)	((word_t) (&((type *) 0)->field))
-#endif
+/* ISO C and C++ provide offsetof through <stddef.h>.
+ * Use the toolchain's standard definition instead of a kernel-specific
+ * null-pointer expression or a compiler builtin macro definition. */
+#include <stddef.h>
 
 /* Turn preprocessor symbol definition into string */
 #define	MKSTR(sym)	MKSTR2(sym)

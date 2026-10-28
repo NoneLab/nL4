@@ -54,7 +54,7 @@ DECLARE_TRACEPOINT(SYSCALL_THREAD_CONTROL);
 DECLARE_KMEM_GROUP(kmem_tcb);
 
 whole_tcb_t __whole_dummy_tcb  __attribute__((aligned(sizeof(whole_tcb_t))));
-const tcb_t *__dummy_tcb = (const tcb_t *) &__whole_dummy_tcb;	    
+tcb_t *__dummy_tcb = (tcb_t *) &__whole_dummy_tcb;	    
 
 #if defined(CONFIG_STATIC_TCBS)
 tcb_t *tcb_t::tcb_array[TOTAL_KTCBS];

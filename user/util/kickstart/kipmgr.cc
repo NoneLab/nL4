@@ -60,6 +60,21 @@ typedef union {
     } x;
 } memdesc_t;
 
+static bool intersects_physical_memory(
+    L4_Word64_t a_low,
+    L4_Word64_t a_high,
+    L4_Word64_t b_low,
+    L4_Word64_t b_high
+)
+{
+    return (
+        a_low <= a_high &&
+        b_low <= b_high &&
+        a_low <= b_high &&
+        b_low <= a_high
+    );
+}
+
 
 kip_manager_t::kip_manager_t (void)
 {
@@ -239,17 +254,22 @@ L4_Word_t kip_manager_t::get_min_pagesize (void)
  */
 bool kip_manager_t::is_mem_region_free (L4_Word_t start, L4_Word_t size)
 {
+    if (!size)
+        return false;
+
+    const L4_Word64_t req_low = start;
+    const L4_Word64_t req_high = req_low + size - 1;
     L4_Word_t i;
-    L4_Word_t end = start - 1 + size;
 
     // Look for conflicts with kdebug, sigma0, sigma1, and the root server.
     L4_Word_t off = KCP_OFFSET (Kdebug);
     for (i = 0; i < 4; i++)
     {
-	if (is_intersection (start, end,
-			     get_val (off + i*4 + 2),
-			     get_val (off + i*4 + 3)))
-	    return false;
+        const auto area_low = get_val(off + i * 4 + 2);
+        const auto area_high = get_val(off + i * 4 + 3);
+
+        if (intersects_physical_memory(req_low, req_high, area_low, area_high))
+            return false;
     }
 
     // Look for conflicts with memory descriptors.
@@ -274,7 +294,7 @@ bool kip_manager_t::is_mem_region_free (L4_Word_t start, L4_Word_t size)
 	    continue;
 	}
 
-	if (is_intersection (start, end, low, high))
+	if (intersects_physical_memory(req_low, req_high, low, high))
 	    return false;
     }
 

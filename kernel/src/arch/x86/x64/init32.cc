@@ -33,6 +33,8 @@
  *                
  ********************************************************************/
 
+__asm__(".code32");
+
 #include <init.h>
 
 
@@ -158,6 +160,11 @@ static void SECTION(".init.init32") init32_cons (void)
 
 #endif
 
+// QEMU dbugcon
+static inline void SECTION(".init.init32") init32_trace(char stage)
+{
+    __asm__ __volatile__("outb %%al, $0xe9" : : "a"(stage));
+}
 
 /**
  * 
@@ -168,7 +175,7 @@ d */
 
 extern "C" void SECTION(".init.init32") init_paging( u32_t is_ap )
 {
-   
+
     init32_cons();
     /* 
      * Test if long mode is available
@@ -177,9 +184,13 @@ extern "C" void SECTION(".init.init32") init_paging( u32_t is_ap )
      */ 
 	
     if (!x86_mmu_t::has_long_mode())
-	init32_spin(1);
+    {
+        init32_trace('F');
+	    init32_spin(1);
+    }
 
 
+    init32_trace('4');
     for (int i=0; i<512; i++){
 	init_pml4[i] = init_pdp[i] = init_pdir[i] = 0;
     }
@@ -213,6 +224,8 @@ extern "C" void SECTION(".init.init32") init_paging( u32_t is_ap )
     init_pdp[0] = init_pdp[X86_X64_PDP_IDX(KERNEL_OFFSET_TYPED) ] =\
 	(u64_t) ( ( (u32_t) (init_pdir)) | INIT32_PTAB_ATTRIBS);
 
+    init32_trace('5');
+
     
     /* 
      * the pml4 needs 2 entries: 
@@ -237,6 +250,8 @@ extern "C" void SECTION(".init.init32") init_paging( u32_t is_ap )
 	 
     /* Enable paged mode */
     x86_mmu_t::enable_paging();
+
+    init32_trace('6');
 	 
     /* Success ?  */
     if (!(x86_mmu_t::long_mode_active()))
@@ -274,6 +289,8 @@ extern "C" void SECTION(".init.init32") init_paging( u32_t is_ap )
     
     if (found == false)
 	init32_spin(4);
+
+    init32_trace('7');
 
     /* 
      * Load new (64-bit) code segment, 

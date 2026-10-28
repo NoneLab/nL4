@@ -41,6 +41,9 @@ start:
 _start:
 	cli	/* disable int's */
 	cld	/* clear direction flag */
+
+	movb $'1', %al
+	outb %al, $0xe9
         
 	/* load temporary stack pointer */
 	lea	_mini_stack-4, %esp

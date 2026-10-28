@@ -33,6 +33,7 @@
 #include <l4io.h>
 
 #include "kickstart.h"
+#include "l4/ia32/types.h"
 #include "mbi.h"
 #include "kipmgr.h"
 #include "lib.h"
@@ -238,7 +239,36 @@ mbi_t * install_mbi (kip_manager_t* kip)
 
     L4_Word_t target_mbi = find_free_mem_region( mbi_size, kip );
     if( target_mbi == 0 )
-	FAIL();
+    {
+        L4_Word64_t phys_max = kip->get_phys_mem_max();
+        printf("[MBI-DIAG] copy allocation failed: size=%u"
+                "MBI modules=%u mmap=%u mmap_length=%u\n",
+                (unsigned)mbi_size, (unsigned)mbi->modcount, (unsigned)mbi->flags.mmap, (unsigned)mbi->mmap_length);
+        
+        static const L4_Word_t probe[] = {
+            0x0000,
+            0x1000,
+            0x2000,
+            0x10000,
+            0x100000,
+            0x200000,
+            0x1000000,
+            0x2000000,
+        };
+
+        for (L4_Word_t i = 0; i < sizeof(probe)/sizeof(probe[0]); i++)
+        {
+            if ((L4_Word64_t) probe[i] + mbi_size > phys_max)
+                continue;
+
+            printf("[MBI-DIAG] candidate=%x mbi_free=%u kip_free=%u\n",
+                    (unsigned)probe[i],
+                    (unsigned)mbi->is_mem_region_free(probe[i], mbi_size),
+                    (unsigned)kip->is_mem_region_free(probe[i], mbi_size));
+        }
+
+	    FAIL();
+    }
     mbi->copy( (mbi_t *)target_mbi );
 
     // Protect the mbi.

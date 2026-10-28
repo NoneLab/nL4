@@ -58,7 +58,7 @@ typedef struct jmp_buf { u32_t eip; u32_t esp; u32_t ebp; int val; } jmp_buf[1];
 static inline void SECTION(SEC_KDEBUG) longjmp(jmp_buf env, int val)
 {
 #if 0
-    printf("%s(%x,%x) called from %x\n", __FUNCTION__, &env, val,
+    printf("%s(%x,%x) called from %x\n", __func__, &env, val,
 	   ({u32_t x;__asm__ __volatile__("call 0f;0:popl %0":"=r"(x));x;}));
     printf("jumping to eip=%x esp=%x, ebp=%x\n",
 	   env->eip, env->esp, env->ebp);
@@ -76,7 +76,7 @@ static inline void SECTION(SEC_KDEBUG) longjmp(jmp_buf env, int val)
 static inline int SECTION(SEC_KDEBUG) setjmp(jmp_buf env)
 {
 #if 0
-    printf("%s(%x) called from %x\n", __FUNCTION__, &env,
+    printf("%s(%x) called from %x\n", __func__, &env,
 	   ({u32_t x;__asm__ __volatile__("call 0f;0:popl %0":"=r"(x));x;}));
 #endif
     env->val = 0;
@@ -179,7 +179,7 @@ void SECTION(SEC_KDEBUG) mef(int status,
 	 bfd_vma memaddr,
 	 struct disassemble_info *info)
 {
-    //printf("%s(%x,%x,%x)\n", __FUNCTION__, status, memaddr, info);
+    //printf("%s(%x,%x,%x)\n", __func__, status, memaddr, info);
     printf("##");
 };
 

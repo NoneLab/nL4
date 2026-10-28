@@ -154,7 +154,7 @@ void * kmem_t::alloc(word_t size)
 
     spinlock.lock();
     
-    ALLOC_TRACE("%s(%d) kfl: %p\n", __FUNCTION__, size, kmem_free_list);
+    ALLOC_TRACE("%s(%d) kfl: %p\n", __func__, size, kmem_free_list);
     TRACEPOINT (KMEM_ALLOC, "kmem_alloc (%d [%d%c]), ip: %p\n",
 		size, size >= GB (1) ? size >> 30 :
 		size >= MB (1) ? size >> 20 : size >> 10,
@@ -173,14 +173,14 @@ void * kmem_t::alloc(word_t size)
 	/* properly aligned ??? */
 	if (!((word_t) curr & (size - 1)))
 	{
-	    ALLOC_TRACE("%s(%d):%d: curr=%x\n", __FUNCTION__, 
+	    ALLOC_TRACE("%s(%d):%d: curr=%x\n", __func__, 
 			size, __LINE__, curr);
 
 	    tmp = (word_t*) *curr;
 	    for (i = 1; tmp && (i < (size / KMEM_CHUNKSIZE)); i++)
 	    {
 		ALLOC_TRACE("%s():%d: i=%d, tmp=%x\n", 
-			    __FUNCTION__, __LINE__, i, tmp);
+			    __func__, __LINE__, i, tmp);
 
 		if ((word_t) tmp != ((word_t) curr + KMEM_CHUNKSIZE*i))
 		{
@@ -255,7 +255,7 @@ void * kmem_t::alloc_aligned(word_t size, word_t alignment, word_t mask)
 
     spinlock.lock();
     
-    ALLOC_TRACE("%s(%d) kfl: %p\n", __FUNCTION__, size, kmem_free_list);
+    ALLOC_TRACE("%s(%d) kfl: %p\n", __func__, size, kmem_free_list);
     TRACEPOINT (KMEM_ALLOC, "kmem_alloc (%d), ip: %p\n", size, __builtin_return_address (0));
     KMEM_CHECK;
     
@@ -270,14 +270,14 @@ void * kmem_t::alloc_aligned(word_t size, word_t alignment, word_t mask)
 	/* properly aligned ??? */
 	if ((ALIGN((word_t)curr) == align) && (!((word_t) curr & ((size)- 1))))
 	{
-	    ALLOC_TRACE("%s(%d):%d: curr=%x\n", __FUNCTION__, 
+	    ALLOC_TRACE("%s(%d):%d: curr=%x\n", __func__, 
 			size, __LINE__, curr);
 
 	    tmp = (word_t*) *curr;
 	    for (i = 1; tmp && (i < (size / KMEM_CHUNKSIZE)); i++)
 	    {
 		ALLOC_TRACE("%s():%d: i=%d, tmp=%x\n", 
-			    __FUNCTION__, __LINE__, i, tmp);
+			    __func__, __LINE__, i, tmp);
 
 		if ((word_t) tmp != ((word_t) curr + KMEM_CHUNKSIZE*i))
 		{
