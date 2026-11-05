@@ -385,6 +385,7 @@ void pager (void)
     }
 }
 
+extern "C"
 int main (void)
 {
     L4_Word_t control;

@@ -195,10 +195,10 @@ L4_INLINE L4_Word_t L4_ThreadControl (L4_ThreadId_t dest,
 	"=D" (dummy)
 
 	: /* inputs */
-	"0" (dest),
-	"1" (Pager),
-	"2" (Scheduler),
-	"3" (SpaceSpecifier),
+	"0" (dest.raw),
+	"1" (Pager.raw),
+	"2" (Scheduler.raw),
+	"3" (SpaceSpecifier.raw),
 	"4" (&in)
 
 	: /* clobbers */
@@ -272,7 +272,7 @@ L4_INLINE L4_Word_t  L4_Schedule (L4_ThreadId_t dest,
 	"=D" (dummy)
 
 	: /* inputs */
-	"0" (dest),
+	"0" (dest.raw),
 	"1" (PrioControl),
 	"2" (TimeControl),
 	"3" (ProcessorControl),
@@ -485,10 +485,10 @@ L4_INLINE L4_Word_t L4_SpaceControl (L4_ThreadId_t SpaceSpecifier,
 	"=D" (dummy)
 
 	: /* inputs */
-	"0" (SpaceSpecifier),
+	"0" (SpaceSpecifier.raw),
 	"1" (control),
-	"2" (KernelInterfacePageArea),
-	"3" (UtcbArea),
+	"2" (KernelInterfacePageArea.raw),
+	"3" (UtcbArea.raw),
 	"4" (&in)
 
 	: /* clobbers */

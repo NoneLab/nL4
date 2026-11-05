@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # The original toolchain offset generation expressed with GCC, nm, awk and sed.
 set -euo pipefail
-if (( $# != 7 )); then echo "usage: $0 root output profile subarch cxx nm awk" >&2; exit 2; fi
+if (( $# != 8 )); then echo "usage: $0 root output profile subarch cxx nm awk" >&2; exit 2; fi
 root=$1; out=$2; profile=$3; subarch=$4; cxx=$5; nm=$6; awk=$7
 kernel=$root/kernel
 cfg=$out/config/config.h
@@ -23,7 +23,7 @@ if [[ $subarch == x64 ]]; then
 else
   cpu=(-m32 -mpreferred-stack-boundary=2)
 fi
-builtin_inc=$($cxx -print-file-name=include)
+builtin_inc=$8
 pp=(-nostdinc "-I$inc" "-I$kernel/src" "-I$kernel/src/generic" "-I$builtin_inc"
   -Ux86 -U"$subarch" -Up4 -Upc99 -Uv4 -Urr
   -D__ARCH__=x86 "-D__SUBARCH__=$subarch" -D__CPU__=p4 -D__PLATFORM__=pc99 -D__API__=v4 -D__SCHED__=rr
@@ -52,7 +52,12 @@ layout="$out/generated/layout.cc"
   -w -DBUILD_TCB_LAYOUT -Dprivate=public -Dprotected=public -S "$layout" -o "$out/generated/layout.s"
 {
   printf '#ifndef PISTACHIO_GENERATED_TCB_LAYOUT_H\n#define PISTACHIO_GENERATED_TCB_LAYOUT_H\n'
-  sed -n -e '/^#define OFS_/ {s/[$]//g;p;}' "$out/generated/layout.s"
+  sed -n -e \
+      '/^[[:space:]]*#define OFS_/ {
+          s/^[[:space:]]*//
+          s/[$]//g
+          p
+      }' "$out/generated/layout.s"
   printf '#endif\n'
 } > "$inc/tcb_layout.h.tmp"
 test "$(grep -c '^#define OFS_' "$inc/tcb_layout.h.tmp")" -gt 1

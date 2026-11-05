@@ -13,6 +13,7 @@
 #ifndef __ARCH__X86__ATOMIC_H__
 #define __ARCH__X86__ATOMIC_H__
 
+#include "arch/x86/x64/types.h"
 #ifdef CONFIG_SMP
 # define X86_LOCK "lock;"
 #else
@@ -58,16 +59,17 @@ public:
     
     bool cmpxchg( word_t old_val, word_t new_val )
 	{
-	    bool result;
-	    __asm__ __volatile__ (
-		X86_LOCK "cmpxchg %1, %2	\n\t"
-		"setz %0		\n\t"
+	    word_t expected = old_val;
+		unsigned char success;
 
-		: "=a" (result)
-		: "r" (new_val), "m"(val), "0" (old_val)
-		: "memory"
+	    __asm__ __volatile__ (
+		X86_LOCK "cmpxchg %3, %1	\n\t"
+				 "sete %0		\n\t"
+		: "=&q" (success), "+m" (val), "+a"(expected)
+		: "r" (new_val)
+		: "memory", "cc"
 		);
-	    return (result);
+	    return (success != 0);
 	}
 
 private:

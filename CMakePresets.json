@@ -19,7 +19,10 @@
       "binaryDir": "${sourceDir}/build/cmake/x64-kdb",
       "cacheVariables": { 
         "PISTACHIO_PROFILE": "x86-x64-p4-debug",
-        "PISTACHIO_ROOT_TASK": "helloworld"  
+        "PISTACHIO_ROOT_TASK": "helloworld",
+        "CMAKE_C_COMPILER": "clang-22",
+        "CMAKE_CXX_COMPILER" : "clang++-22",
+        "CMAKE_ASM_COMPILER" : "clang-22"
       }
     },
     {

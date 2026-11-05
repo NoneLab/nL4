@@ -425,7 +425,7 @@ SYS_EXCHANGE_REGISTERS (threadid_t dst_tid, word_t control,
     {
     
 	current->set_error_code (EINVALID_THREAD);
-	return_exchange_registers (threadid_t::nilthread (), 0, 0, 0, 0,
+	return_exchange_registers (threadid_t::nilthread ().get_raw(), 0, 0, 0, 0,
 				   threadid_t::nilthread (), 0);
     }
  
@@ -448,7 +448,7 @@ SYS_EXCHANGE_REGISTERS (threadid_t dst_tid, word_t control,
     }
 
     return_exchange_registers
-	(is_local ? dst->get_global_id () : dst->get_local_id (),
+	((is_local ? dst->get_global_id () : dst->get_local_id ()).get_raw(),
 	 ctrl.raw, usp, uip, uflags, pager_tid, uhandle);
 
 }

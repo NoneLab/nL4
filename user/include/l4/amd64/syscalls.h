@@ -165,11 +165,11 @@ L4_INLINE L4_Word_t L4_ThreadControl (L4_ThreadId_t dest,
 	"=S" (dummy),				/* %3 RSI */
 	"=D" (dummy)				/* %4 RDI */
 	: /* inputs */
-	[spacespec]	"0" (SpaceSpecifier),	/* %5  RAX <- R8 */
-	[utcblocation]	"1" (UtcbLocation),	/* %6  RCX <- R9 */
-	[scheduler]	"2" (Scheduler),	/* %7  RDX */
-	[pager]		"3" (Pager),		/* %8  RSI */	
-	[dest]		"4" (dest)		/* %9  RDI */
+	[spacespec]	"0" (SpaceSpecifier.raw),	/* %5  RAX <- R8 */
+	[utcblocation]	"1" ((L4_Word_t)UtcbLocation),	/* %6  RCX <- R9 */
+	[scheduler]	"2" (Scheduler.raw),	/* %7  RDX */
+	[pager]		"3" (Pager.raw),		/* %8  RSI */	
+	[dest]		"4" (dest.raw)		/* %9  RDI */
 	: /* clobbers */
 	  "memory", "rbx", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"
 	);
@@ -218,7 +218,7 @@ L4_INLINE void L4_ThreadSwitch (L4_ThreadId_t dest)
 	: /* outputs */
 	"=D" (dummy)				/* %0 RDI */
 	: /* inputs */
-	[dest]		"0" (dest)		/* %1  RDI */
+	[dest]		"0" (dest.raw)		/* %1  RDI */
 	: /* clobbers */
 	"memory", "rax", "rbx", "rcx",  "rdx", "rsi", 
 	"r8", "r9", "r10",  "r11", "r12", "r13", "r14", "r15"
@@ -259,7 +259,7 @@ L4_INLINE L4_Word_t  L4_Schedule (L4_ThreadId_t dest,
 	[precontrol]	"1" (PreemptionControl),/* %6  RCX <- R9 */
 	[tcontrol]	"2" (TimeControl),	/* %7  RDX */
 	[PrioControl]	"3" (PrioControl),	/* %8  RSI */	
-	[dest]		"4" (dest)		/* %9  RDI */
+	[dest]		"4" (dest.raw)		/* %9  RDI */
 	: /* clobbers */
 	"memory", "rbx","r8", "r9", "r10",  "r11", "r12", "r13", "r14", "r15"
 	);
@@ -313,7 +313,7 @@ L4_INLINE L4_MsgTag_t L4_Ipc (L4_ThreadId_t to,
 	: /* inputs */
 	[to]		"4" (to),		/* %5  RSI */
 	[utcb]		"D" (utcb),		/* %6  RDI */
-	[from]		"3" (FromSpecifier),	/* %7  RDX */
+	[from]		"3" (FromSpecifier.raw),	/* %7  RDX */
 	[utcb0]		"2" (utcb[0]),		/* %8  RCX -> R09 */
 	[timeouts]	"r" (Timeouts)		/* %9  REG -> R08 */
 	: /* clobbers */
@@ -371,7 +371,7 @@ L4_INLINE L4_MsgTag_t L4_Lipc (L4_ThreadId_t to,
 	: /* inputs */
 	[to]		"4" (to),		/* %5  RSI */
 	[utcb]		"D" (utcb),		/* %6  RDI */
-	[from]		"3" (FromSpecifier),	/* %7  RDX */
+	[from]		"3" (FromSpecifier.raw),	/* %7  RDX */
 	[utcb0]		"2" (utcb[0]),		/* %8  RCX -> R09 */
 	[timeouts]	"r" (Timeouts)		/* %9  REG -> R08 */
 	: /* clobbers */
@@ -461,11 +461,11 @@ L4_INLINE L4_Word_t L4_SpaceControl (L4_ThreadId_t SpaceSpecifier,
 	"=S" (dummy), 	  	  		  	/* %3 RSI */
 	"=D" (dummy)  	  	  		  	/* %4 RDI */
 	: /* inputs */
-	[utcbarea]	"0" (UtcbArea),			/* %5  RAX -> R8 */
-	[redirector]	"1" (redirector),		/* %6  RCX -> R9 */
-	[kiparea]	"2" (KernelInterfacePageArea),	/* %7  RDX */
+	[utcbarea]	"0" (UtcbArea.raw),			/* %5  RAX -> R8 */
+	[redirector]	"1" (redirector.raw),		/* %6  RCX -> R9 */
+	[kiparea]	"2" (KernelInterfacePageArea.raw),	/* %7  RDX */
 	[control]	"3" (control),			/* %8  RSI */	
-	[spacespec]	"4" (SpaceSpecifier)		/* %9  RDI */
+	[spacespec]	"4" (SpaceSpecifier.raw)		/* %9  RDI */
 	: /* clobbers */
 	"memory", "rbx", "r8", "r9", "r10",  "r11", "r12", "r13", "r14", "r15"
 	);

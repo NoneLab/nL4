@@ -7,6 +7,7 @@ function(l4_compile name bits)
     )
 
     target_compile_options(${name} PRIVATE
+        ${PISTACHIO_ASM_COMPAT_FLAGS}
         -nostdinc "-I${PISTACHIO_BUILTIN_INCLUDE}" -fno-pic -fno-pie
         "$<$<COMPILE_LANGUAGE:CXX>:-ffreestanding;-fno-stack-protector;-fno-builtin;-fno-exceptions;-fno-rtti;-fno-threadsafe-statics;-fno-asynchronous-unwind-tables;-fno-unwind-tables;-Wall;-Wno-unused-parameter;-O2;-g>"
         "$<$<COMPILE_LANGUAGE:ASM>:-DASSEMBLY>")

@@ -25,7 +25,7 @@ file(GLOB_RECURSE _kernel_header_deps CONFIGURE_DEPENDS
 add_custom_command(OUTPUT "${_headers}"
   COMMAND "${PISTACHIO_BASH}" "${CMAKE_SOURCE_DIR}/cmake/generate-kernel.sh"
     "${CMAKE_SOURCE_DIR}" "${_out}" "${PISTACHIO_PROFILE}" "${PISTACHIO_SUBARCH}"
-    "${CMAKE_CXX_COMPILER}" "${PISTACHIO_NM}" "${PISTACHIO_AWK}"
+    "${CMAKE_CXX_COMPILER}" "${PISTACHIO_NM}" "${PISTACHIO_AWK}" "${PISTACHIO_BUILTIN_INCLUDE}"
   DEPENDS "${CMAKE_SOURCE_DIR}/cmake/generate-kernel.sh"
     "${CMAKE_SOURCE_DIR}/mk/asm-symbols.awk"
     "${_cfgbase}/config.h" "${_cfgbase}/.config" ${_kernel_header_deps}
@@ -66,6 +66,7 @@ else()
   set(_ld_opts)
 endif()
 target_compile_options(pistachio-kernel-objs PRIVATE
+  "${PISTACHIO_ASM_COMPAT_FLAGS}"
   "-I${PISTACHIO_BUILTIN_INCLUDE}" ${_definitions} ${_includes} ${_flags} ${_cpu_opts}
   "$<$<COMPILE_LANGUAGE:C,CXX>:SHELL:-include ${CMAKE_SOURCE_DIR}/kernel/src/generic/types.h>"
   "$<$<COMPILE_LANGUAGE:CXX>:-fno-rtti;-fno-exceptions;-fno-threadsafe-statics>"
@@ -76,6 +77,7 @@ if(PISTACHIO_SUBARCH STREQUAL "x64")
   set(_init_obj "${_out}/generated/init32.o")
   add_custom_command(OUTPUT "${_init_obj}"
     COMMAND "${CMAKE_CXX_COMPILER}"
+      ${PISTACHIO_ASM_COMPAT_FLAGS}
       -std=c++11 ${_definitions}
       -imacros "${_config}" -imacros "${CMAKE_SOURCE_DIR}/kernel/src/generic/macros.h"
       -include "${CMAKE_SOURCE_DIR}/kernel/src/generic/config.h" ${_flags}
@@ -92,8 +94,19 @@ if(PISTACHIO_SUBARCH STREQUAL "x64")
     VERBATIM)
   set(_extra_obj "${_init_obj}")
 endif()
-execute_process(COMMAND "${CMAKE_CXX_COMPILER}" -print-libgcc-file-name
-  OUTPUT_VARIABLE _libgcc OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(_runtime_query
+        --rtlib=libgcc
+        -print-libgcc-file-name)
+else()
+  set(_runtime_query -print-libgcc-file-name)
+endif()
+
+execute_process(COMMAND "${CMAKE_CXX_COMPILER}" 
+  ${_runtime_query}
+  OUTPUT_VARIABLE _libgcc 
+  OUTPUT_STRIP_TRAILING_WHITESPACE 
+  COMMAND_ERROR_IS_FATAL ANY)
 if(PISTACHIO_SUBARCH STREQUAL "x64")
   set(_runtime_lib "${_libgcc}")
 else()
