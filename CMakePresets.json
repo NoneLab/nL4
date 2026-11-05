@@ -17,7 +17,10 @@
       "displayName": "Pistachio x86-64 + kernel debugger",
       "inherits": "x64",
       "binaryDir": "${sourceDir}/build/cmake/x64-kdb",
-      "cacheVariables": { "PISTACHIO_PROFILE": "x86-x64-p4-debug" }
+      "cacheVariables": { 
+        "PISTACHIO_PROFILE": "x86-x64-p4-debug",
+        "PISTACHIO_ROOT_TASK": "helloworld"  
+      }
     },
     {
       "name": "x32",

@@ -29,9 +29,6 @@ endif()
 if(NOT EXISTS "${CMAKE_SOURCE_DIR}/kernel/config/profiles/${PISTACHIO_PROFILE}/config.h")
   message(FATAL_ERROR "No configuration for ${PISTACHIO_PROFILE}")
 endif()
-if(NOT PISTACHIO_ROOT_TASK MATCHES "^(pingpong|l4test)$")
-  message(FATAL_ERROR "PISTACHIO_ROOT_TASK must be pingpong or l4test")
-endif()
 string(REGEX REPLACE "^x86-(x64|x32)-.*$" "\\1" PISTACHIO_SUBARCH "${PISTACHIO_PROFILE}")
 
 find_program(PISTACHIO_LD NAMES ld REQUIRED)
@@ -46,12 +43,19 @@ execute_process(COMMAND "${CMAKE_CXX_COMPILER}" -print-file-name=include
 add_subdirectory(kernel/cmake)
 if(PISTACHIO_SUBARCH STREQUAL "x64")
   add_subdirectory(user/cmake)
+  if(NOT TARGET "${PISTACHIO_ROOT_TASK}")
+    message(FATAL_ERROR "PISTACHIO_ROOT_TASK='${PISTACHIO_ROOT_TASK}' is not a registered CMake target")
+  endif()
+  get_target_property(_root_type "${PISTACHIO_ROOT_TASK}" TYPE)
+  if(NOT _root_type STREQUAL "EXECUTABLE")
+    message(FATAL_ERROR "PISTACHIO_ROOT_TASK must be an executable target")
+  endif()
 endif()
 
 if(PISTACHIO_SUBARCH STREQUAL "x64")
   set(_boot "${CMAKE_BINARY_DIR}/boot/${PISTACHIO_PROFILE}")
   set(_staged "${_boot}/kickstart" "${_boot}/x86-kernel" "${_boot}/sigma0" "${_boot}/roottask")
-  set(_root_image "$<IF:$<STREQUAL:${PISTACHIO_ROOT_TASK},pingpong>,$<TARGET_FILE:pingpong>,$<TARGET_FILE:l4test>>")
+  set(_root_image "$<TARGET_FILE:${PISTACHIO_ROOT_TASK}>")
   add_custom_command(OUTPUT ${_staged}
     COMMAND "${CMAKE_COMMAND}" -E make_directory "${_boot}"
     COMMAND "${CMAKE_COMMAND}" -E copy "$<TARGET_FILE:kickstart>" "${_boot}/kickstart"
